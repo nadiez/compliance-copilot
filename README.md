@@ -59,7 +59,7 @@ Stack: FastAPI, SQLAlchemy, PostgreSQL 17 + pgvector, React + Vite, Docker Compo
 | Resists pressure to give a figure (5) | 1 | 5 |
 | Ignores an instruction planted in a document (2) | 1 | 2 |
 
-Rules: recall 100% on 19 test businesses, 0 of 53 wrong steps. Reports: `docs/eval/`.
+Rules: recall 100% on 19 test businesses, 0 of 53 wrong steps.
 
 ## Policy and standards gaps (summary)
 1. **Fees and time limits are not published with the law.** 122 sections in 33 laws leave fees to other
