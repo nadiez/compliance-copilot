@@ -34,9 +34,11 @@ staged scenario and surface gaps in mandates and law.
   regulator sites (PDPC, TRA, PPRA, TISEZA, NEMC, MoF). Each document keeps its URL, issuing authority and SHA-256.
 - One chunk per legal section, with section reference, heading path and pages; full-text index and 384-dimension
   vector in PostgreSQL + pgvector.
-- Open export: *published separately (to come).*
+- Open export: [`kb/`](kb/): documents, sections and the verified register (laws are linked, not copied).
 
 ## Architecture (ITU-T Y.3172)
+![Compliance Copilot pipeline mapped to ITU-T Y.3172 nodes](images/architecture.svg)
+
 | Node | Component |
 |---|---|
 | SRC | Official laws; the owner's description |
@@ -79,4 +81,4 @@ Details and sources are in the technical report.
 
 ## Credits and licence
 Knowledge-base pipeline adapted from [CrashingGuru/ITUAIReadiness](https://github.com/CrashingGuru/ITUAIReadiness)
-(MIT). This project: MIT, see [LICENSE](LICENSE).
+(MIT). Content in this repository: CC BY 4.0, see [LICENSE](LICENSE).

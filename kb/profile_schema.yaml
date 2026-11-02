@@ -1,0 +1,260 @@
+# Business profile for Tanzania (Mainland): the facts the rules engine evaluates
+# (SPEC §6, §8). Obligation triggers may only reference these keys and options.
+# Questions are asked in `priority` order, at most 5, only for facts the
+# description did not already give. `required: true` facts are always asked and
+# cannot be skipped (no roadmap is reliable without them). No legal facts here — thresholds such as the
+# VAT registration turnover live in cited obligation triggers, not in this file.
+version: 1
+fields:
+  - key: legal_form
+    type: choice
+    priority: 1
+    required: true
+    label: Legal form
+    question: Will you incorporate a company?
+    # Companies are incorporated under the Companies Act; the rest trade under a
+    # registered business name (Business Names Act) or as a co-operative society.
+    groups:
+      - { value: company, label: "Yes, a company", question: "Which kind of company?" }
+      - { value: not_company, label: "No", question: "How will you trade?" }
+    options:
+      - { value: private_company, label: Private company limited by shares, group: company }
+      - { value: guarantee_company, label: Company limited by guarantee, group: company }
+      - { value: public_company, label: Public company, group: company }
+      - { value: foreign_branch, label: Foreign company (branch in Tanzania), group: company }
+      - { value: sole_proprietor, label: Sole trader (just me), group: not_company }
+      - { value: partnership, label: Partnership, group: not_company }
+      - { value: cooperative, label: Co-operative society, group: not_company }
+
+  # Business Names Act s.4(b): an individual registers only when trading under a
+  # name other than their true names or initials (a firm always registers, s.4(a)).
+  - key: own_name
+    type: boolean
+    priority: 1
+    required: true
+    ask_if: { field: legal_form, op: equals, value: sole_proprietor, values: [] }
+    label: Trades under own name
+    question: Will you trade under your own name (or your initials)?
+
+  - key: activities
+    type: multi_choice
+    priority: 2
+    label: What the business does
+    question: Which of these describe what the business does?
+    options:
+      - { value: general_trade, label: Retail or wholesale trade }
+      - { value: food_service, label: Restaurant, café or food service }
+      - { value: food_processing, label: Food or drink processing }
+      - { value: manufacturing, label: Manufacturing }
+      - { value: construction, label: Construction or building works }
+      - { value: transport_goods, label: Transporting goods }
+      - { value: transport_passengers, label: Transporting passengers }
+      - { value: tourism_hospitality, label: Tourism, hotels or tour operation }
+      - { value: health_services, label: Clinic, hospital or health services }
+      - { value: pharmacy, label: Pharmacy or selling medicines }
+      - { value: medical_devices, label: Medical devices or health products }
+      - { value: education_school, label: School (pre-primary to secondary) }
+      - { value: education_higher, label: College or university }
+      - { value: vocational_training, label: Vocational or technical training }
+      - { value: media_content, label: Broadcasting or online content }
+      - { value: film_production, label: Film or video production }
+      - { value: arts_entertainment, label: Arts, music or entertainment }
+      - { value: ict_telecom, label: Telecoms, internet or software services }
+      - { value: drones, label: Operating drones }
+      - { value: aviation, label: Aviation or air services }
+      - { value: shipping, label: Shipping, clearing or port services }
+      - { value: financial_services, label: Banking, lending or microfinance }
+      - { value: payments, label: Payments or mobile money }
+      - { value: insurance, label: Insurance }
+      - { value: capital_markets, label: Investments or securities }
+      - { value: mining, label: Mining or minerals }
+      - { value: petroleum, label: Oil, gas or fuel }
+      - { value: energy_water, label: Electricity or water utilities }
+      - { value: agriculture, label: Farming or crop trade }
+      - { value: forestry, label: Forestry or timber }
+      - { value: chemicals, label: Industrial or consumer chemicals }
+      - { value: radiation, label: Radiation sources or X-ray equipment }
+      - { value: gaming, label: Betting, lotteries or gaming }
+      - { value: cooperative_activity, label: Co-operative activities }
+      - { value: professional_services, label: Professional or consulting services }
+
+  # Follow-ups asked only for the activities where the law turns on them.
+  - key: handles_meat
+    type: boolean
+    priority: 2
+    ask_if: { field: activities, op: includes_any, value: null, values: [food_processing, food_service, transport_goods, agriculture] }
+    label: Slaughters animals or transports meat
+    question: Will you slaughter animals or transport meat?
+
+  - key: plant_equipment
+    type: boolean
+    priority: 2
+    ask_if: { field: activities, op: includes_any, value: null, values: [manufacturing, food_processing, construction, mining, chemicals, energy_water, agriculture, shipping, petroleum, transport_goods] }
+    label: Uses boilers, air tanks or lifting machines
+    question: Will you use a steam boiler, a compressed-air tank or lifting machinery such as a crane or hoist?
+
+  - key: employees
+    type: number
+    priority: 3
+    required: true
+    label: Employees
+    question: How many people will the business employ?
+    options:
+      - { value: 0, label: None — just the owners }
+      - { value: 1, label: "1" }
+      - { value: 5, label: "5" }
+      - { value: 10, label: "10" }
+      - { value: 50, label: "50" }
+    allow_other: true
+
+  - key: sells_goods
+    type: boolean
+    priority: 3
+    required: true
+    label: Sells physical goods
+    question: Does the business sell physical goods (products, food, materials), not only services?
+
+  # Weights and Measures Act: verification and the trade-measurement duties turn on a
+  # "weighing or measuring instrument… used or intended to be used in trade", not on
+  # selling goods as such (a restaurant selling meals by the plate weighs nothing).
+  - key: weighs_or_measures
+    type: boolean
+    priority: 3
+    required: true
+    ask_if: { field: sells_goods, op: is_true, value: null, values: [] }
+    label: Weighs or measures what it sells
+    question: Will you weigh or measure what you sell — by the kilo, litre or metre (scales, measuring jugs, fuel pumps)?
+
+  - key: premises
+    type: choice
+    priority: 4
+    label: Main premises
+    question: Where will the business mainly operate from?
+    options:
+      - { value: none, label: No premises / online only }
+      - { value: home, label: From home }
+      - { value: office, label: Office }
+      - { value: shop, label: Shop or showroom }
+      - { value: warehouse, label: Warehouse or store }
+      - { value: factory, label: Factory or workshop }
+      - { value: hospitality, label: Restaurant, hotel or bar }
+      - { value: facility, label: Clinic, school or other facility }
+
+  - key: builds_premises
+    type: boolean
+    priority: 4
+    ask_if: { field: premises, op: one_of, value: null, values: [home, office, shop, warehouse, factory, hospitality, facility] }
+    label: Builds or alters premises
+    question: Will you construct a building, or alter one, for the business?
+
+  - key: foreign_shareholders
+    type: boolean
+    priority: 5
+    label: Foreign owners
+    question: Are any owners or shareholders not Tanzanian?
+
+  - key: foreign_employees
+    type: boolean
+    priority: 6
+    label: Foreign staff
+    question: Will you employ anyone who is not Tanzanian?
+
+  - key: personal_data
+    type: boolean
+    priority: 7
+    label: Personal data
+    question: Will you collect or keep personal information about customers or staff (names, phone numbers, health or payment details)?
+
+  - key: annual_turnover
+    type: number
+    priority: 8
+    label: Expected yearly turnover (TZS)
+    question: Roughly how much do you expect to sell in a year, in Tanzanian shillings?
+    # Exact amounts, never bands: a band's midpoint could fall on the wrong side
+    # of a legal threshold.
+    options:
+      - { value: 0, label: Not trading yet }
+      - { value: 20000000, label: 20 million }
+      - { value: 50000000, label: 50 million }
+      - { value: 100000000, label: 100 million }
+      - { value: 200000000, label: 200 million }
+      - { value: 500000000, label: 500 million }
+      - { value: 1000000000, label: 1 billion }
+    allow_other: true
+
+  - key: imports_exports
+    type: boolean
+    priority: 9
+    label: Imports or exports
+    question: Will the business import or export goods?
+
+  - key: makes_products
+    type: boolean
+    priority: 10
+    label: Makes or packages products
+    question: Will you make, package or label products for sale?
+
+  - key: environmental_project
+    type: boolean
+    priority: 11
+    label: Environmental impact
+    question: Will you build or run a project that may affect the environment (a factory, construction site, mine, large farm or similar)?
+
+  - key: government_supplier
+    type: boolean
+    priority: 12
+    label: Sells to government
+    question: Do you plan to supply goods or services to government bodies?
+
+  - key: standard_terms
+    type: boolean
+    priority: 13
+    label: Standard terms for customers
+    question: Will customers sign or accept your standard written terms and conditions (a form contract)?
+
+  - key: in_sez
+    type: boolean
+    priority: 14
+    label: In a special economic zone
+    question: Will the business operate inside a special economic zone?
+
+# Sector-only regulators: which businesses they concern at all. The Extractor is
+# told this scope, and a draft from such a regulator always carries the condition
+# (added by code if missing). General regulators (BRELA, TRA, PO-RALG, OSHA, NSSF,
+# WCF, PMO-LER, PDPC, NEMC, TBS, WMA, FCC, VETA) have no scope.
+regulator_scopes:
+  BASATA: { field: activities, op: includes_any, value: null, values: [arts_entertainment] }
+  BOT: { field: activities, op: includes_any, value: null, values: [financial_services, payments] }
+  CMSA: { field: activities, op: includes_any, value: null, values: [capital_markets] }
+  COPRA: { field: activities, op: includes_any, value: null, values: [agriculture] }
+  CRB: { field: activities, op: includes_any, value: null, values: [construction] }
+  EWURA: { field: activities, op: includes_any, value: null, values: [energy_water, petroleum] }
+  GBT: { field: activities, op: includes_any, value: null, values: [gaming] }
+  GCLA: { field: activities, op: includes_any, value: null, values: [chemicals] }
+  IMMIGRATION: { field: foreign_employees, op: is_true, value: null, values: [] }
+  LATRA: { field: activities, op: includes_any, value: null, values: [transport_goods, transport_passengers] }
+  MC: { field: activities, op: includes_any, value: null, values: [mining] }
+  MNRT: { field: activities, op: includes_any, value: null, values: [tourism_hospitality] }
+  MOEST: { field: activities, op: includes_any, value: null, values: [education_school] }
+  NECTA: { field: activities, op: includes_any, value: null, values: [education_school] }
+  TIE: { field: activities, op: includes_any, value: null, values: [education_school] }
+  TTPB: { field: activities, op: includes_any, value: null, values: [education_school] }
+  MOH: { field: activities, op: includes_any, value: null, values: [health_services] }
+  NACTVET: { field: activities, op: includes_any, value: null, values: [vocational_training, education_higher] }
+  TCU: { field: activities, op: includes_any, value: null, values: [education_higher] }
+  PC: { field: activities, op: includes_any, value: null, values: [pharmacy] }
+  TMDA: { field: activities, op: includes_any, value: null, values: [pharmacy, medical_devices] }
+  PPRA: { field: government_supplier, op: is_true, value: null, values: [] }
+  PURA: { field: activities, op: includes_any, value: null, values: [petroleum] }
+  TAEC: { field: activities, op: includes_any, value: null, values: [radiation] }
+  TASAC: { field: activities, op: includes_any, value: null, values: [shipping] }
+  TCAA: { field: activities, op: includes_any, value: null, values: [aviation, drones] }
+  TCDC: { field: legal_form, op: equals, value: cooperative, values: [] }
+  TCRA: { field: activities, op: includes_any, value: null, values: [media_content, ict_telecom] }
+  TFB: { field: activities, op: includes_any, value: null, values: [film_production] }
+  TFS: { field: activities, op: includes_any, value: null, values: [forestry] }
+  TIRA: { field: activities, op: includes_any, value: null, values: [insurance] }
+  TISEZA: { field: foreign_shareholders, op: is_true, value: null, values: [] }
+  TPHPA: { field: activities, op: includes_any, value: null, values: [agriculture] }
+  WMA: { field: sells_goods, op: is_true, value: null, values: [] }
+  FRF: { field: premises, op: not_equals, value: none, values: [] }
