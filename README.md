@@ -1,8 +1,13 @@
 # Compliance Copilot
 
-**AI for Good Sandbox Hackathon (UAE) · Team Haumea**
-Member: Ndabuye Gideon · Contact: sndabuye@gmail.com · Live: https://compliance.nac.africa
-Domain: public services (business registration, licensing and compliance) · First country: Tanzania
+**AI for Good Sandbox Hackathon (UAE)**
+
+- **Team:** Haumea
+- **Member:** Ndabuye Gideon
+- **Contact:** sndabuye@gmail.com
+- **Live system:** https://compliance.nac.africa
+- **Domain:** public services (business registration, licensing and compliance)
+- **First country:** Tanzania
 
 ## Summary
 Small businesses must satisfy many regulators whose rules are scattered across Acts, regulations and notices.
@@ -43,16 +48,6 @@ staged scenario and surface gaps in mandates and law.
 | MLFO / Sandbox | Async orchestrator + Postgres job queue; Incident Room and evaluation suite |
 
 Stack: FastAPI, SQLAlchemy, PostgreSQL 17 + pgvector, React + Vite, Docker Compose (3 containers, ~0.7 GB RAM).
-
-## Scenarios and how to reproduce them
-Production commands (stack `compliance`); each calls the real model for a few cents.
-
-| Scenario | Command |
-|---|---|
-| Step 2 (explainability) and step 4 (personal data in chat) | `docker compose -p compliance exec -T api python - TZ < backend/scripts/scenario_evidence.py` |
-| Step 3 (superseded law leaves search) | `docker compose exec api pytest -q tests/test_ingest_and_search.py -k superseded` |
-| Incident Room: AI assistant gives stale guidance; data abroad | `docker compose -p compliance exec -T api python - TZ ai-compliance-assistant-incident < backend/scripts/run_scenario.py` |
-| Incident Room: mobile wallet with AI credit scoring | same, with `mobile-wallet-incident` |
 
 ## Evaluation
 | Measure (1 Nov 2026) | Same model, ungoverned | Compliance Copilot |
