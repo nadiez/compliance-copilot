@@ -51,6 +51,11 @@ staged scenario and surface gaps in mandates and law.
 
 Stack: FastAPI, SQLAlchemy, PostgreSQL 17 + pgvector, React + Vite, Docker Compose (3 containers, ~0.7 GB RAM).
 
+## Agents
+Three groups: for owners (an Orchestrator and domain agents that answer from their own regulators' laws), for
+the knowledge base (agents that draft obligations for human verification), and for regulators (one agent per
+institution in the Incident Room, a Coordinator and a Gap Analyst). Details: [`agents/`](agents/).
+
 ## Evaluation
 | Measure (1 Nov 2026) | Same model, ungoverned | Compliance Copilot |
 |---|---|---|
