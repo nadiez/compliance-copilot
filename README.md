@@ -1,3 +1,5 @@
+<img src="images/logo.svg" alt="Compliance Copilot logo" width="72">
+
 # Compliance Copilot
 
 **AI for Good Sandbox Hackathon (UAE)**
