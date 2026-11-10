@@ -7,7 +7,7 @@
 - **Contact:** sndabuye@gmail.com
 - **Live system:** https://compliance.nac.africa
 - **Domain:** public services (business registration, licensing and compliance)
-- **First country:** Tanzania
+- **Countries:** Tanzania (English, Swahili) and the United Arab Emirates (Arabic, English)
 
 ## Summary
 Small businesses must satisfy many regulators whose rules are scattered across laws, regulations and agency
