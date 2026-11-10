@@ -1,0 +1,772 @@
+# The procedure-first journey for the United Arab Emirates (federal + Dubai), loaded by
+#   docker compose -p compliance exec api python -m scripts.import_journey AE [--dry-run]
+#
+# Why (docs/research/reports/Dubai mainland setup procedures by sector.md): the register
+# was extracted law by law, so it held the duties but not the order a business really
+# goes through, attributed steps to the ministry that wrote the law instead of the counter
+# that runs them (the trade name is reserved with DET, not the federal ministry), and had
+# no Central Bank, KHDA, RTA, VARA or MoIAT gates. Each step below is a counter the owner
+# visits, in order (`requires`), and quotes an official procedure page or the law that
+# sets it (CLAUDE.md rule 1). Fees, deadlines and validity appear only where a quote says
+# them. Rules still decide who sees what (`when`); the existing extracted duties stay as
+# ongoing conduct and are re-ordered, re-conditioned or retired here.
+#
+# Where the business is licensed decides the licensing spine: DET for the mainland, the
+# free zone's own authority otherwise (whose steps we do not cover). Federal duties and
+# the Dubai rules that reach free zones (DHA, KHDA, RTA, VARA, contractors) follow the
+# activity, whichever authority licenses the business.
+
+version: 1
+roadmap:
+  # A step can depend on alternatives (a DET licence or a free-zone licence); only the one
+  # that applies to the business shows.
+  skip_excluded_prerequisites: true
+
+x-conditions:
+  mainland: &mainland
+    match: all
+    conditions: [{ field: licence_authority, op: equals, value: dubai_mainland, values: [] }]
+  free_zone: &free_zone
+    match: all
+    conditions: [{ field: licence_authority, op: one_of, value: null, values: [free_zone, difc] }]
+  employer: &employer
+    match: all
+    conditions: [{ field: employees, op: at_least, value: "1", values: [] }]
+  data_not_difc: &data_not_difc
+    match: all
+    conditions:
+      - { field: personal_data, op: is_true, value: null, values: [] }
+      - { field: licence_authority, op: not_equals, value: difc, values: [] }
+
+x-sources:
+  steps: &uae_steps "Steps to start a business on the mainland (u.ae)"
+  recruit: &uae_recruit "Recruiting on the mainland (u.ae)"
+
+steps:
+  # ── 1. Before the licence (mainland) ────────────────────────────────────────────────
+  - code: AE-DET-INITIAL-APPROVAL
+    regulator: DET
+    title: Get DET's initial approval for the activities, owners and legal form
+    summary: >-
+      The first application on the mainland, made through Invest in Dubai once you have
+      chosen your activities and legal form. It means the government has no objection to
+      the business being set up and lets you go on to the next steps, but it does not let
+      you trade yet. Some activities need another authority's approval first (they appear
+      as their own steps).
+    kind: registration
+    area: company
+    frequency: once
+    necessity: essential
+    when: *mainland
+    portal_url: https://investindubai.gov.ae
+    how_to_steps:
+      - Choose the business activities; they decide the licence type (commercial, professional, industrial, tourism and others).
+      - Choose the legal form that matches the activities.
+      - Apply through Invest in Dubai with the owners' details.
+    cite:
+      - doc: *uae_steps
+        quote: An initial approval means that the UAE Government has no objection for the business to be established in the country.
+      - doc: *uae_steps
+        quote: It does not, however, grant the authority to run or practice the business activity.
+      - doc: *uae_steps
+        quote: It is important to identify the business activity you want to conduct as it is the basis for selecting the legal form and type of licence, whether commercial, industrial or professional, etc.
+
+  - code: AE-DET-TRADE-NAME-RESERVATION
+    regulator: DET
+    title: Reserve the trade name with DET
+    summary: >-
+      The trade name is reserved with Dubai's economic department (DET, through Invest in
+      Dubai), not with the federal ministry, which registers trademarks. The name must end
+      with the legal form (LLC, EST…), suit the activity, and not already be registered.
+    kind: registration
+    area: company
+    frequency: once
+    necessity: essential
+    when: *mainland
+    portal_url: https://investindubai.gov.ae
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: An investor can apply for the trade name through the economic department in each emirate, through its website or mobile application.
+      - doc: *uae_steps
+        quote: The local department of economic development registers the trade name, while Ministry of Economy and Tourism registers the trademark.
+
+  - code: AE-DET-MOA-ATTESTATION
+    regulator: DET
+    title: Sign the Memorandum of Association and have it attested
+    summary: >-
+      Companies need a signed Memorandum of Association, prepared and attested by a
+      UAE law firm, court or notary public (or signed electronically through Invest in
+      Dubai), before the licence is issued.
+    kind: registration
+    area: company
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+        - { field: legal_form, op: one_of, value: null, values: [llc, sole_llc, private_joint_stock, public_joint_stock, partnership] }
+    requires: [AE-DET-INITIAL-APPROVAL, AE-DET-TRADE-NAME-RESERVATION]
+    cite:
+      - doc: *uae_steps
+        quote: UAE-based law firms, courts and notary public prepare and attest MoAs and agreements.
+      - doc: *uae_steps
+        quote: Duly attested Memorandum of Association (for all types of companies)
+
+  - code: AE-DET-LOCAL-SERVICE-AGENT
+    regulator: DET
+    title: Appoint a UAE local service agent under an attested agreement
+    summary: >-
+      A sole establishment or civil company owned only by non-GCC nationals needs a
+      UAE national as local service agent, under an agreement attested by the notary
+      public or the court. The agent does not own any share of the business.
+    kind: registration
+    area: company
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+        - { field: legal_form, op: one_of, value: null, values: [sole_establishment, civil_company] }
+        - { field: ownership, op: equals, value: other, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: Businesses owned completely by non-GCC residents require a local service agent from the UAE. Appointing the local service agent will be under an agreement attested by the notary public or the court.
+      - doc: *uae_steps
+        quote: Duly attested service agent contract (for civil establishments and companies that are 100 per cent owned by non-GCC nationals).
+
+  - code: AE-RERA-LEASE-REGISTRATION
+    title: Register the lease of your premises in Ejari
+    summary: >-
+      The business needs a physical address. In Dubai the office, shop or warehouse lease
+      is registered in Ejari (Dubai Land Department's Real Estate Regulatory Agency), and
+      the attested lease is one of the documents for the licence.
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: In Dubai, the agreement must be registered with Ejari
+      - doc: *uae_steps
+        quote: Copy of the lease contract duly attested by Real Estate Regulatory Agency (RERA) in Dubai
+
+  - code: AE-CDGC-PREVENTIVE-SAFETY-CERTIFICATE
+    requires: [AE-RERA-LEASE-REGISTRATION]
+
+  # Approvals from other authorities, before the licence (u.ae "additional approvals")
+  - code: AE-CBUAE-PAYMENT-SERVICES-LICENCE
+    regulator: CBUAE
+    title: Get a Central Bank licence to provide payment services
+    summary: >-
+      Payment account and instrument issuing, merchant acquiring, payment aggregation,
+      money transfers, payment tokens, payment initiation and account information services
+      need a licence from the Central Bank of the UAE under its Retail Payment Services
+      and Card Schemes Regulation. A trade licence alone does not allow them.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: payments, values: [] }
+        - { field: licence_authority, op: not_equals, value: difc, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: CBUAE issues Retail Payment Services
+        quote: The Regulation introduces a licensing regime for payment service providers operating – or wishing to provide – one or more of nine payment services or payment card schemes in the UAE.
+      - doc: CBUAE issues Retail Payment Services
+        quote: "These include: payment account issuance, payment instrument issuance, merchant acquiring, payment aggregation, domestic and cross-border fund transfers, payment tokens, payment initiation, and payment account information services."
+      - doc: *uae_steps
+        quote: Central Bank of UAE - financial institutions, banks, money exchanges, insurance company, Insurance agents
+      - doc: Retail Payment Services and Card Schemes Regulation
+        quote: No Person shall provide or engage in the Promotion within the State of any of the Retail Payment Services set out in Annex I without obtaining a prior License from the Central Bank unless this Person is an exempted Person.
+
+  - code: AE-CBUAE-STORED-VALUE-LICENCE
+    regulator: CBUAE
+    title: Get a Central Bank licence for stored value facilities (e-wallets, prepaid)
+    summary: >-
+      Holding customers' money in e-wallets or prepaid products needs a stored value
+      facility licence from the Central Bank of the UAE (Stored Value Facilities
+      Regulation), unless the facility can only be used with its issuer. The applicant
+      must be a company incorporated in the UAE, free zones included, but not in a
+      financial free zone such as the DIFC.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: stored_value, values: [] }
+        - { field: licence_authority, op: not_equals, value: difc, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: CBUAE issues a new regulation on Stored Value
+        quote: The scope of this regulation includes licensing, supervision and enforcement provisions applicable to the companies, which are licensed to provide SVF.
+      - doc: CBUAE issues a new regulation on Stored Value
+        quote: the CBUAE aims to facilitate FinTech firms and other non-bank payment service providers easier access to the UAE market while continuing to safeguard the customers’ funds
+      - doc: Stored Value Facilities (SVF) Regulation
+        quote: carry on the activity of issuing or operating SVF without prior License except if the issued SVF is a Single-purpose Stored Value Facility.
+      - doc: Stored Value Facilities (SVF) Regulation
+        quote: The Applicant must be a company incorporated in the State, including free zones but excluding Financial Free Zones.
+
+  - code: AE-CBUAE-FINANCIAL-ACTIVITY-APPROVAL
+    regulator: CBUAE
+    title: Get Central Bank approval for banking, exchange, finance or insurance activities
+    summary: >-
+      Financial institutions, banks, money exchanges, insurance companies and insurance
+      agents need the Central Bank's approval before the trade licence is issued.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: financial_services, values: [] }
+        - { field: licence_authority, op: not_equals, value: difc, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: Central Bank of UAE - financial institutions, banks, money exchanges, insurance company, Insurance agents
+
+  - code: AE-SCA-FINANCIAL-ACTIVITY-APPROVAL
+    regulator: SCA
+    title: Get Securities and Commodities Authority approval for financial advice or broking
+    summary: >-
+      Financial consultation, share broking and investment advisory activities need the
+      Securities and Commodities Authority's approval before the trade licence is issued.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: investment_advice, values: [] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: Securities and Commodities Authority - financial consultation, share broking, investment advisory
+
+  - code: AE-VARA-VIRTUAL-ASSET-PERMIT
+    regulator: VARA
+    title: Get a VARA permit before offering virtual-asset services
+    summary: >-
+      Virtual-asset (crypto) services anywhere in Dubai, including free zones but not the
+      DIFC, need a permit from the Dubai Virtual Assets Regulatory Authority.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: virtual_assets, values: [] }
+        - { field: licence_authority, op: not_equals, value: difc, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: Law No. (4) of 2022 Regulating Virtual Assets
+        quote: No Person may conduct the Activity in the Emirate without obtaining a Permit from VARA
+      - doc: Law No. (4) of 2022 Regulating Virtual Assets
+        quote: This Law applies to the Virtual Asset services provided in all zones across the Emirate, including Special Development Zones and free zones but excluding the Dubai International Financial Centre.
+
+  - code: AE-TDRA-TELECOM-APPROVAL
+    regulator: TDRA
+    title: Get TDRA approval for telecommunication activities
+    summary: >-
+      Activities in the telecommunication sector need the approval of the
+      Telecommunications and Digital Government Regulatory Authority before the licence.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: telecom, values: [] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: Telecommunications and Digital Government Regulatory Authority (TDRA) - activities in the Telecommunication sector
+      - doc: Issue Licences to Provide Telecommunication Services
+        quote: The Telecommunications and Digital Government Regulatory Authority is the legal entity responsible for issuing licenses under the Telecommunications Law.
+
+  - code: AE-UAEMC-MEDIA-ACTIVITY-APPROVAL
+    regulator: UAEMC
+    title: Get UAE Media Council approval for media and advertising activities
+    summary: >-
+      Publishing, printing, newspapers, advertising, video, film and photography need the
+      approval of the UAE Media Council (formerly the National Media Council).
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: media_advertising, values: [] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: *uae_steps
+        quote: National Media Council - publishing, printing, newspaper, advertising, video film, photography.
+
+  - code: AE-RERA-REAL-ESTATE-ACTIVITY-LICENCE
+    regulator: RERA
+    title: Get the Dubai Land Department's approval for the real estate activity
+    summary: >-
+      Real estate brokerage and other property services are licensed with the Dubai Land
+      Department through Trakheesi alongside the DET application; each broker then needs a
+      practice card.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: real_estate, values: [] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    portal_url: https://dubailand.gov.ae/en/eservices/real-estate-activity-license/
+    cite:
+      - doc: Real Estate Licensing Application
+        quote: This service allows individuals to apply for a license to practice real estate activities
+      - doc: Real Estate Licensing Application
+        quote: 1- Submit the license application through the Dubai Department of Economy and Tourism. 2- Register in the Trakheesi system via the Dubai Land Department website
+
+  - code: AE-DET-TOURISM-LICENCE
+    regulator: DET
+    title: Meet DET's tourism licensing conditions for a travel agency or tour operator
+    summary: >-
+      Travel agencies and tour operators hold a tourism licence from DET (formerly DTCM),
+      with conditions that include a bank guarantee kept valid for as long as the licence.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: travel_agency, values: [] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    cite:
+      - doc: Regulation No. (6) of 2006
+        quote: An Establishment may not conduct any tourist activity in the Emirate without obtaining a relevant Licence from the DTCM.
+      - doc: Regulation No. (6) of 2006
+        quote: This bank guarantee must remain valid unless the Licence is revoked.
+
+  - code: AE-DHA-FACILITY-LICENCE
+    regulator: DHA
+    title: Apply to the DHA for the health facility licence
+    summary: >-
+      A clinic or other health facility applies to the DHA (through Sheryan, or through
+      DET) with the expected trade name, the facility plan and its design. The DHA issues
+      an initial approval; all licence requirements must then be met within a year. The
+      licence is issued inactive until the facility is ready.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: health_services, values: [] }
+    requires: [AE-DET-TRADE-NAME-RESERVATION]
+    deadline: All licence requirements within one year of the DHA's initial approval (extendable once).
+    portal_url: https://www.dha.gov.ae
+    cite:
+      - doc: Manual for Licensing Health Facility
+        quote: New facility license may be initiated with DHA or relevant trade license issuing authorities such as Dubai Economic & Tourism (DET) or authorities of the Free Zone areas.
+      - doc: Manual for Licensing Health Facility
+        quote: a. Trade License information or expected Trade Name and ownership information.
+      - doc: Executive Council Resolution No. (49) of 2024
+        quote: Upon receiving an initial approval, the applicant must satisfy all Licence requirements within one (1) year from the date on which the initial approval is issued.
+        field: deadline
+      - doc: Executive Council Resolution No. (49) of 2024
+        quote: all facilities engaged in practising Health Activities across the Emirate, including in Special Development Zones and free zones, such as the Dubai International Financial Centre
+
+  - code: AE-KHDA-TRAINING-AUTHORISATION
+    regulator: KHDA
+    title: Get KHDA authorisation for the training institute
+    summary: >-
+      Offering training to others in Dubai, free zones included, needs an authorisation
+      from the KHDA as well as a licence. The authorisation lasts one year and is renewed
+      on an application made 30 days before it expires.
+    kind: licence
+    area: sector
+    frequency: annual
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: training, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    validity: One year, renewable; apply to renew 30 days before it expires.
+    cite:
+      - doc: Executive Council Resolution No. (50) of 2015
+        quote: No Person may offer Training Activities to others in the Emirate without first obtaining the relevant Authorisation from the KHDA and a Licence from the relevant Licensing Authority.
+      - doc: Executive Council Resolution No. (50) of 2015
+        quote: An Authorisation will be valid for a period of one (1) year, renewable for the same period.
+        field: validity
+      - doc: Executive Council Resolution No. (50) of 2015
+        quote: This Resolution will apply to any Person who conducts a Training Activity in the Emirate, including Special Development Zones and free zones such as the Dubai International Financial Centre
+
+  - code: AE-RTA-TRANSPORT-PERMIT
+    regulator: RTA
+    title: Get an RTA permit for transport or vehicle rental
+    summary: >-
+      Transporting goods or passengers, or renting out vehicles, in Dubai (free zones
+      included) needs an RTA permit. The application uses DET's initial approval; the permit
+      lasts a year and is renewed at least 30 days before it expires.
+    kind: permit
+    area: sector
+    frequency: annual
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: transport, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+    validity: One year, renewable; apply to renew at least 30 days before it expires.
+    cite:
+      - doc: Executive Council Resolution No. (47) of 2017
+        quote: No Person may conduct the Activity in the Emirate without first obtaining a Permit.
+      - doc: Executive Council Resolution No. (47) of 2017
+        quote: A Permit will be valid for a renewable period of one (1) year.
+        field: validity
+      - doc: Administrative Resolution No. (706)
+        quote: an initial approval to conduct the Activity issued by the commercial licensing authority in the Emirate where the applicant is a new Establishment
+
+  # ── 2. The licence ──────────────────────────────────────────────────────────────────
+  - code: AE-DBLC-DED-BUSINESS-LICENCE
+    title: Get the DET trade licence (pay within 30 days of the voucher)
+    summary: >-
+      With the initial approval, trade name, attested MoA or service agent agreement,
+      Ejari lease and any other authority's approval, DET issues the trade licence once
+      the fees are paid. Pay within 30 days of receiving the payment voucher or the
+      application is cancelled. The Commercial Register entry follows automatically.
+    when: *mainland
+    deadline: Pay within 30 days of receiving the payment voucher, or the application is cancelled.
+    requires:
+      - AE-DET-INITIAL-APPROVAL
+      - AE-DET-TRADE-NAME-RESERVATION
+      - AE-DET-MOA-ATTESTATION
+      - AE-DET-LOCAL-SERVICE-AGENT
+      - AE-RERA-LEASE-REGISTRATION
+      - AE-CDGC-PREVENTIVE-SAFETY-CERTIFICATE
+      - AE-CBUAE-PAYMENT-SERVICES-LICENCE
+      - AE-CBUAE-STORED-VALUE-LICENCE
+      - AE-CBUAE-FINANCIAL-ACTIVITY-APPROVAL
+      - AE-SCA-FINANCIAL-ACTIVITY-APPROVAL
+      - AE-TDRA-TELECOM-APPROVAL
+      - AE-UAEMC-MEDIA-ACTIVITY-APPROVAL
+      - AE-RERA-REAL-ESTATE-ACTIVITY-LICENCE
+      - AE-DET-TOURISM-LICENCE
+    cite:
+      - doc: *uae_steps
+        quote: You have to pay for your trade licence within 30 days of receiving the payment voucher.
+        field: deadline
+      - doc: *uae_steps
+        quote: Initial approval receipt and all the documents submitted previously
+
+  - code: AE-FZ-LICENCE
+    title: Get your licence from your free zone's licensing authority
+    summary: >-
+      A free-zone business (including the DIFC) is licensed by the authority that runs
+      its free zone, under that zone's own rules, which this roadmap does not cover. The
+      federal duties and the Dubai rules that reach free zones below still apply.
+    kind: licence
+    area: company
+    frequency: once
+    necessity: essential
+    when: *free_zone
+    cite:
+      - doc: Executive Council Resolution No. (11) of 2025
+        quote: Any authority legally mandated to supervise a Free Zone and license the Establishments operating therein.
+
+  # ── 3. After the licence ────────────────────────────────────────────────────────────
+  - code: AE-DCH-MEMBERSHIP-REGISTRATION
+    when: *mainland
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE]
+
+  - code: AE-FTA-CORPORATE-TAX-REGISTRATION
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE]
+
+  - code: AE-FTA-VAT-REGISTRATION
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE]
+
+  - code: AE-MOHRE-ESTABLISHMENT-CARD
+    regulator: MOHRE
+    title: Open the MOHRE establishment file and get the e-signature card
+    summary: >-
+      Before hiring, register the establishment with MOHRE: a file and establishment card
+      linked to the trade licence, then the electronic signature card (after an inspection
+      visit). The e-signature card is needed to apply for work permits.
+    kind: registration
+    area: employment
+    frequency: once
+    necessity: essential
+    when: *employer
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE]
+    cite:
+      - doc: *uae_recruit
+        quote: First, the employer must apply to MoHRE to officially register the establishment by opening a file and obtaining an establishment card and number linked to the business licence, enabling the company to operate and recruit employees.
+      - doc: *uae_recruit
+        quote: The electronic signature card is a prerequisite for the employer to apply for work permits for employees.
+
+  - code: AE-MOHRE-WORK-PERMIT
+    requires: [AE-MOHRE-ESTABLISHMENT-CARD]
+    fee: A bank guarantee of AED 3,000 per registered employee, refundable when the employee's service ends.
+    validity: 60 days; pay the approval fees and guarantee within that time.
+    cite:
+      - doc: *uae_recruit
+        quote: The ministry requires a bank guarantee of AED 3,000 for each registered employee, deposited to the ministry’s account through one of the approved banks in the UAE.
+        field: fee
+      - doc: *uae_recruit
+        quote: The work permit shall be valid for a period of 60 days.
+        field: validity
+
+  - code: AE-GDRFA-ESTABLISHMENT-CARD
+    regulator: GDRFA
+    title: Open the company's immigration file (establishment card) with GDRFA Dubai
+    summary: >-
+      After MOHRE's approval, open a company file with the General Directorate of
+      Residency and Foreigners Affairs. With its establishment card the company can apply
+      for entry permits and residence visas for its employees.
+    kind: registration
+    area: employment
+    frequency: once
+    necessity: essential
+    when: *employer
+    requires: [AE-MOHRE-ESTABLISHMENT-CARD]
+    cite:
+      - doc: *uae_recruit
+        quote: After receiving the ministry’s initial approval, the employer must also apply to open a company file with the General Directorate of Residency and Foreigners Affairs (GDRFA).
+
+  - code: AE-GDRFA-EMPLOYEE-RESIDENCE-VISA
+    regulator: GDRFA
+    title: Get each foreign employee's entry permit, medical test, Emirates ID and residence visa
+    summary: >-
+      For each new employee from abroad: an entry permit (valid two months), then within
+      that time the medical fitness test, the Emirates ID application and the MOHRE labour
+      card; the residence visa is then issued on the work permit. The Work Bundle platform
+      does these in one application.
+    kind: permit
+    area: employment
+    frequency: on_event
+    necessity: essential
+    when: *employer
+    requires: [AE-GDRFA-ESTABLISHMENT-CARD, AE-MOHRE-WORK-PERMIT]
+    cite:
+      - doc: *uae_recruit
+        quote: During the two-month period, the employer must instruct the employee to complete the medical fitness test and apply for an Emirates ID through the Federal Authority for Identity, Citizenship, Customs and Port Security, as well as obtain the labour card from the Ministry of Human Resources and Emiratisation.
+
+  - code: AE-GPSSA-EMPLOYER-REGISTRATION
+    regulator: GPSSA
+    title: Register with the GPSSA and insure your UAE and GCC national employees
+    summary: >-
+      An employer with at least one UAE or GCC national employee registers with the
+      General Pension and Social Security Authority on the Maashi platform (no fee), so
+      their pension contributions can be paid.
+    kind: registration
+    area: employment
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: employees, op: at_least, value: "1", values: [] }
+        - { field: employs_gcc_nationals, op: is_true, value: null, values: [] }
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE]
+    fee: No fee.
+    cite:
+      - doc: Employers Registration (GPSSA
+        quote: The employer must have at least one Emirati employee or a citizen of the Gulf Cooperation Council countries
+      - doc: Employers Registration (GPSSA
+        quote: Service Delivery Time - 2 working days Service Fees Not Applicable
+        field: fee
+
+  # Sector steps after the licence
+  - code: AE-DHA-FACILITY-ACTIVATION
+    regulator: DHA
+    title: Activate the DHA facility licence before seeing patients
+    summary: >-
+      Once the trade licence is issued, a medical director appointed, the professionals
+      added and the final inspection passed, apply to activate the inactive DHA licence.
+      Professionals may not practise while the facility licence is inactive.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: health_services, values: [] }
+    requires: [AE-DHA-FACILITY-LICENCE, AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE, AE-CDGC-PREVENTIVE-SAFETY-CERTIFICATE]
+    cite:
+      - doc: Manual for Licensing Health Facility
+        quote: allows healthcare facilities to activate their previously issued inactive license in order to start operating once all of the conditions, such as final inspection and adding medical professionals to the facility, have been fulfilled.
+      - doc: Manual for Licensing Health Facility
+        quote: 7.2.1. Obtain a valid Trade License. 7.2.2. Appoint a Medical Director.
+      - doc: Manual for Licensing Health Facility
+        quote: "The HP of the HF are not entitled to practice under the following circumstances: 5.5.1. The HF license is inactive."
+
+  - code: AE-RERA-BROKER-PRACTICE-CARD
+    regulator: RERA
+    title: Get a Dubai Land Department practice card for each broker
+    summary: >-
+      Each broker needs a practice card before working: a Dubai Police certificate of good
+      conduct and the broker exam. The card's validity follows the trade licence.
+    kind: permit
+    area: sector
+    frequency: on_event
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: real_estate, values: [] }
+    requires: [AE-RERA-REAL-ESTATE-ACTIVITY-LICENCE, AE-DBLC-DED-BUSINESS-LICENCE]
+    fee: "Broker card AED 500; broker exam AED 700 (plus AED 10 knowledge and AED 10 innovation fees)."
+    portal_url: https://dubailand.gov.ae/en/eservices/request-for-issuing-a-real-estate-activity-practice-card
+    cite:
+      - doc: Issuance of a real estate professional practice card
+        quote: No person shall have the right to practice the activity registered in the license except after registering and obtaining the card designated for the type of activity.
+      - doc: Issuance of a real estate professional practice card
+        quote: "Issuing a real estate broker card: AED 500 Broker exam: AED 700 + AED 10 knowledge fee & AED 10 innovation fee"
+        field: fee
+
+  - code: AE-DM-CONTRACTOR-REGISTER
+    regulator: DM
+    title: Register as a contractor with Dubai Municipality and get classified
+    summary: >-
+      A contractor may not work or present itself as a contractor in Dubai (free zones and
+      the DIFC included) without a trade licence and an entry in Dubai Municipality's
+      contractors register, and works only within its classified speciality and grade.
+      The entry lasts a year; apply to renew within 30 days of its expiry.
+    kind: registration
+    area: sector
+    frequency: annual
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: construction, values: [] }
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE]
+    validity: One year, renewable; apply to renew within 30 days of expiry.
+    cite:
+      - doc: قانون رقم (7) لسنة 2025
+        quote: على أي شخص طبيعي أو اعتباري مُزاولة أي من أنشِطة المُقاولات في الإمارة» أو الترويج عن نفسه بوصفه مُقاولاً بأي شكلٍ من الأشكالء ما لم يكن حاصلاً على الرّخصة التجاريّة؛ وَمُقيّداً في السّجل
+      - doc: قانون رقم (7) لسنة 2025
+        quote: مُدَة قيد المُقاول في الّجل سنة واحدة قابلة للتجديد لمُدّد مُمائلة» على أن يُقدّم طلب التجديد خلال (30) ثلاثين يوماً من تاريخ انتهائه
+        field: validity
+      - doc: قانون رقم (7) لسنة 2025
+        quote: جميع المُقاولين العاملين في الإمارة» بما في ذلك مناطق التطوير الخاصة والمناطق الحُرَّةء بما فيها مركز دبي المالي
+
+  - code: AE-MOIAT-INDUSTRIAL-PRODUCTION-LICENCE
+    regulator: MOIAT
+    title: Get an industrial production licence from MoIAT, if the factory is subject to industrial licensing
+    summary: >-
+      A facility subject to industrial licensing applies to the Ministry of Industry and
+      Advanced Technology with its local industrial licence; after an inspection it
+      receives the industrial production licence, which also opens customs exemptions on
+      machinery and materials. The service lists a total capital of at least AED 250,000.
+    kind: licence
+    area: sector
+    frequency: once
+    necessity: essential
+    when:
+      match: all
+      conditions:
+        - { field: activities, op: includes, value: manufacturing, values: [] }
+    requires: [AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE]
+    portal_url: https://moiat.gov.ae/en/services/issue-industrial-production-license
+    cite:
+      - doc: Issue an Industrial Production License
+        quote: This service allows you to apply for an industrial production license for facilities that are subject to industrial licensing requirements.
+      - doc: Issue an Industrial Production License
+        quote: Total capital of no less than AED 250,000. Industrial license from a local licensing department.
+
+  # ── Re-attributions and re-conditioning of extracted entries ────────────────────────
+  # Beneficial owners: the Registrar is the licensing authority (DET on the mainland),
+  # not the federal ministry (Cabinet Decision 109/2023).
+  - code: AE-MOET-BENEFICIAL-OWNER-REGISTER
+    regulator: DET
+    when: &legal_persons_not_difc
+      match: all
+      conditions:
+        - { field: legal_form, op: one_of, value: null, values: [llc, sole_llc, private_joint_stock, public_joint_stock, foreign_branch, partnership] }
+        - { field: licence_authority, op: not_equals, value: difc, values: [] }
+  - { code: AE-MOET-BENEFICIAL-OWNER-SUBMISSION, regulator: DET, when: *legal_persons_not_difc, requires: [AE-MOET-BENEFICIAL-OWNER-REGISTER, AE-DBLC-DED-BUSINESS-LICENCE, AE-FZ-LICENCE] }
+  - { code: AE-MOET-BENEFICIAL-OWNER-CHANGES, regulator: DET, when: *legal_persons_not_difc }
+  - { code: AE-MOET-BENEFICIAL-OWNER-CONTACT, regulator: DET, when: *legal_persons_not_difc }
+
+  # Company formation under the federal Companies law: mainland, after the DET name.
+  - code: AE-MOET-PARTNERSHIP-INCORPORATION
+    when:
+      match: all
+      conditions:
+        - { field: legal_form, op: one_of, value: null, values: [partnership] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-TRADE-NAME-RESERVATION]
+  - code: AE-MOET-PJSC-INCORPORATION-APPLICATION
+    when:
+      match: all
+      conditions:
+        - { field: legal_form, op: one_of, value: null, values: [private_joint_stock] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-TRADE-NAME-RESERVATION]
+  - code: AE-MOET-PJSC-REGISTRATION-LICENCE
+    when:
+      match: all
+      conditions:
+        - { field: legal_form, op: one_of, value: null, values: [public_joint_stock] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-TRADE-NAME-RESERVATION, AE-MOET-PJSC-INCORPORATION-CERTIFICATE]
+  - code: AE-MOET-FOREIGN-COMPANY-REGISTRATION
+    when:
+      match: all
+      conditions:
+        - { field: legal_form, op: one_of, value: null, values: [foreign_branch] }
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+    requires: [AE-DET-INITIAL-APPROVAL]
+  - { code: AE-DBLC-DED-TRADE-NAME-USE, when: *mainland, requires: [AE-DET-TRADE-NAME-RESERVATION] }
+
+  # The rest of the DET licensing duties: mainland only (was "not in a free zone").
+  - { code: AE-DBLC-DED-LICENCE-VARIATION-APPROVAL, when: *mainland }
+  - { code: AE-DBLC-DED-LICENCE-CHANGE-NOTIFICATIO, when: *mainland }
+  - { code: AE-DBLC-DIGITAL-WINDOW-APPLICATION, when: *mainland }
+  - { code: AE-DBLC-DED-LICENCE-RENEWAL, when: *mainland }
+  - { code: AE-DBLC-DED-DOMICILE-REGISTRATION, when: *mainland }
+  - { code: AE-DCH-MEMBERSHIP-RENEWAL, when: *mainland }
+  - code: AE-DBLC-DED-PREMISES-LICENSED-USE
+    when:
+      match: all
+      conditions:
+        - { field: licence_authority, op: equals, value: dubai_mainland, values: [] }
+        - { field: premises, op: not_equals, value: none, values: [] }
+
+  # Personal data: the federal law excludes free zones with their own data-protection law
+  # (Federal Decree-Law 45/2021, scope: the DIFC has one).
+  - { code: AE-UAEDO-DATA-CONSENT, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-PORTABILITY, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-RECTIFICATION-ERASURE, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-PROCESSOR-GUARANTEES, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-CROSS-BORDER-TRANSFER, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-PROCESSING-CONTROLS, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-BREACH-NOTIFY, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-SECURITY-MEASURES, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-OBJECTION-RESTRICTION, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-PROCESSING-RECORD, when: *data_not_difc }
+  - { code: AE-UAEDO-DATA-SUBJECT-INFO, when: *data_not_difc }
+
+retire:
+  AE-MOET-TRADE-NAME-REGISTRATION: "the trade name is reserved with DET (AE-DET-TRADE-NAME-RESERVATION); the ministry registers trademarks (u.ae, Steps to start a business on the mainland)"
+  AE-DET-COMMERCIAL-REGISTER: "the Commercial Register entry is made by DBLC when the licence is issued (Law 6/2023); not a separate task for the owner"
+  AE-MOET-SOLE-LLC-INCORPORATION: "a one-person LLC is incorporated by the same steps as any mainland company: initial approval, trade name, attested MoA and the DET licence"

@@ -1,0 +1,182 @@
+# Business profile for the United Arab Emirates — federal law plus the Emirate of Dubai
+# (mainland) (SPEC §6, §8). Obligation triggers may only reference these keys and options.
+# Questions are asked in `priority` order, at most 5, only for facts the description did
+# not already give. `required: true` facts are always asked and cannot be skipped. No
+# legal facts here — thresholds such as the VAT registration turnover live in cited
+# obligation triggers, not in this file.
+#
+# Version 2 (2026-11-08, procedure-first rebuild; docs/research/reports/Dubai mainland
+# setup procedures by sector.md): where the business is licensed (not a yes/no free-zone
+# flag: a free-zone company still meets federal rules and the Dubai rules that reach free
+# zones), who owns it (the local service agent rule), and activities fine enough to tell
+# the sector regulators apart.
+version: 2
+fields:
+  - key: licence_authority
+    type: choice
+    priority: 1
+    required: true
+    label: Where it is licensed
+    question: Where will the business be licensed?
+    options:
+      - { value: dubai_mainland, label: "Dubai mainland (Department of Economy and Tourism)" }
+      - { value: free_zone, label: "A Dubai free zone such as DMCC, JAFZA or Dubai Silicon Oasis (its own licensing steps are not covered)" }
+      - { value: difc, label: "Dubai International Financial Centre (DIFC) (its own licensing steps are not covered)" }
+
+  - key: legal_form
+    type: choice
+    priority: 1
+    required: true
+    label: Legal form
+    question: Will you set up a company?
+    groups:
+      - { value: company, label: "Yes, a company", question: "Which kind of company?" }
+      - { value: not_company, label: "No", question: "How will you trade?" }
+    options:
+      - { value: llc, label: Limited liability company (LLC), group: company }
+      - { value: sole_llc, label: One-person limited liability company, group: company }
+      - { value: private_joint_stock, label: Private joint stock company, group: company }
+      - { value: public_joint_stock, label: Public joint stock company, group: company }
+      - { value: foreign_branch, label: Branch of a foreign company, group: company }
+      - { value: partnership, label: General or limited partnership, group: company }
+      - { value: sole_establishment, label: Sole establishment (just me), group: not_company }
+      - { value: civil_company, label: Civil company (professional partnership), group: not_company }
+
+  - key: activities
+    type: multi_choice
+    priority: 2
+    label: What the business does
+    question: Which of these describe what the business does?
+    options:
+      - { value: general_trade, label: Retail or wholesale trade }
+      - { value: ecommerce, label: Selling online }
+      - { value: food_service, label: Restaurant, café or food service }
+      - { value: food_trade, label: Selling or handling food (grocery, food trading) }
+      - { value: manufacturing, label: Manufacturing or industry }
+      - { value: construction, label: Construction or contracting }
+      - { value: engineering_consultancy, label: Engineering consultancy }
+      - { value: real_estate, label: Real estate brokerage or property services }
+      - { value: tourism_hospitality, label: Hotel or holiday homes }
+      - { value: travel_agency, label: Travel agency or tour operator }
+      - { value: transport, label: Transporting goods or passengers, or renting vehicles }
+      - { value: health_services, label: Clinic, medical centre or other health facility }
+      - { value: beauty_personal_care, label: Salon, spa or personal care }
+      - { value: education, label: School or nursery }
+      - { value: training, label: Training institute or courses }
+      - { value: ict_software, label: Software, IT or digital services }
+      - { value: telecom, label: Telecommunication services }
+      - { value: media_advertising, label: Publishing, printing, advertising, film or photography }
+      - { value: professional_services, label: Professional or consulting services }
+      - { value: payments, label: "Payment services (accepting, sending or processing payments for others)" }
+      - { value: stored_value, label: E-wallets or prepaid cards (holding customers' money) }
+      - { value: investment_advice, label: Investment advice, financial consultation or share broking }
+      - { value: virtual_assets, label: Crypto or other virtual assets }
+      - { value: financial_services, label: "Banking, lending, money exchange or insurance" }
+
+  # The local service agent rule turns on whether any owner is a UAE or GCC national.
+  - key: ownership
+    type: choice
+    priority: 3
+    label: Owners' nationality
+    question: Who owns the business?
+    options:
+      - { value: uae, label: At least one UAE national }
+      - { value: gcc, label: "At least one national of another GCC country, and no UAE national" }
+      - { value: other, label: Only owners of other nationalities }
+
+  - key: employees
+    type: number
+    priority: 3
+    required: true
+    label: Employees
+    question: How many people will the business employ?
+    options:
+      - { value: 0, label: None — just the owners }
+      - { value: 1, label: "1" }
+      - { value: 5, label: "5" }
+      - { value: 10, label: "10" }
+      - { value: 50, label: "50" }
+    allow_other: true
+
+  - key: sells_goods
+    type: boolean
+    priority: 3
+    required: true
+    label: Sells physical goods
+    question: Does the business sell physical goods (products, food, materials), not only services?
+
+  # Consumer protection, pricing and anti-fraud duties bind suppliers to consumers.
+  - key: sells_to_consumers
+    type: boolean
+    priority: 3
+    label: Sells to consumers
+    question: Does the business sell goods or services to members of the public (consumers), not only to other businesses?
+
+  # Dubai ECR 12/2025 Art. 1: accommodation for 50+ workers earning AED 2,000 or less.
+  - key: low_wage_workers
+    type: number
+    priority: 3
+    ask_if: { field: employees, op: at_least, value: "50", values: [] }
+    label: Workers earning AED 2,000 a month or less
+    question: How many of your workers earn AED 2,000 a month or less?
+    allow_other: true
+
+  # GPSSA employer registration: at least one UAE or GCC national employee.
+  - key: employs_gcc_nationals
+    type: boolean
+    priority: 4
+    ask_if: { field: employees, op: at_least, value: "1", values: [] }
+    label: Employs UAE or GCC nationals
+    question: Will any of your employees be UAE nationals or nationals of another GCC country?
+
+  - key: premises
+    type: choice
+    priority: 4
+    label: Main premises
+    question: Where will the business mainly operate from?
+    options:
+      - { value: none, label: No premises / online only }
+      - { value: home, label: From home }
+      - { value: office, label: Office }
+      - { value: shop, label: Shop or showroom }
+      - { value: warehouse, label: Warehouse or store }
+      - { value: factory, label: Factory or workshop }
+      - { value: hospitality, label: Restaurant, hotel or café }
+      - { value: facility, label: Clinic, school or other facility }
+
+  - key: personal_data
+    type: boolean
+    priority: 6
+    label: Personal data
+    question: Will you collect or keep personal information about customers or staff (names, phone numbers, health or payment details)?
+
+  - key: annual_turnover
+    type: number
+    priority: 7
+    label: Expected yearly turnover (AED)
+    question: Roughly how much do you expect to sell in a year, in UAE dirhams?
+    # Exact amounts, never bands: a band's midpoint could fall on the wrong side
+    # of a legal threshold.
+    options:
+      - { value: 100000, label: "100,000" }
+      - { value: 500000, label: "500,000" }
+      - { value: 1000000, label: "1,000,000" }
+      - { value: 5000000, label: "5,000,000" }
+    allow_other: true
+
+  - key: imports_exports
+    type: boolean
+    priority: 8
+    label: Imports or exports
+    question: Will the business import or export goods?
+
+  - key: advertises
+    type: boolean
+    priority: 9
+    label: Promotions or advertising
+    question: Will you run promotions, sales or advertising campaigns in Dubai?
+
+# Sector-only regulators: which businesses they concern at all. The Extractor is told
+# this scope, and a draft from such a regulator always carries the condition (added by
+# code if missing). The UAE regulators here are general, so there are none yet.
+regulator_scopes: {}

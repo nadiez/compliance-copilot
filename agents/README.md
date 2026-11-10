@@ -33,8 +33,10 @@ in the audit log.
 - **Checked by:** an injection guard runs first; off-topic messages get a fixed reply.
 
 ### Domain agents
-Five in Tanzania: Registration & licensing; Tax; Employment & workplace; Standards, health, safety & environment;
-Sector regulators. Each country defines its own.
+Each country defines its own five. Tanzania has Registration & licensing, Tax, Employment & workplace,
+Standards, health, safety & environment, and Sector regulators. The UAE has Registration, licensing & companies,
+Tax, Employment, Sector licences & regulated activities, and Consumers, fair trade & public health. Answers come
+in the language of the question (English, Swahili or Arabic), with quotes in the law's own words.
 - **Receives:** the question and sections from its own regulators' laws.
 - **Returns:** up to four short points, each with a section and a word-for-word quote.
 - **Mode:** FAST, or STRONG if an admin sets it to Thorough.

@@ -39,7 +39,8 @@ Incident Room, where agents playing institutions respond to a staged incident an
   read by OCR, and each law keeps its Arabic and English versions linked.
 - Each document keeps its URL, issuing authority and SHA-256. One chunk per section or article, with its
   reference, heading path and pages, a full-text index and a 384-dimension vector in PostgreSQL with pgvector.
-- Open export in [`kb/`](kb/), with documents, sections and the verified register (each law links to its official copy).
+- Open export in [`kb/`](kb/), one folder per country (`TZ/`, `AE/`), with documents, sections, the verified
+  register and the profile questions (each law links to its official copy).
 
 ## Architecture (ITU-T Y.3172)
 ![Compliance Copilot pipeline mapped to ITU-T Y.3172 nodes](images/architecture.svg)
